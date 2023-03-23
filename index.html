@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Number Plate Detection</title>
+	<script src="https://cdn.jsdelivr.net/npm/tesseract.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/jquery"></script>
+</head>
+<body>
+	<h1>Number Plate Detection</h1>
+	<video id="video" width="640" height="480" autoplay></video>
+	<canvas id="canvas" width="640" height="480"></canvas>
+	<div id="output"></div>
+	<script>
+		// Load Tesseract.js
+		Tesseract.load().then(function() {
+			console.log('Tesseract.js loaded');
+		});
+
+		// Get access to the device's camera
+		navigator.mediaDevices.getUserMedia({ video: true })
+			.then(function(stream) {
+				var video = document.getElementById('video');
+				video.srcObject = stream;
+				video.play();
+
+				// Create a canvas element and set its dimensions to match the video
+				var canvas = document.getElementById('canvas');
+				canvas.width = video.videoWidth;
+				canvas.height = video.videoHeight;
+
+				// Draw the current frame from the video onto the canvas every 100ms
+				setInterval(function() {
+					var context = canvas.getContext('2d');
+					context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+					// Detect number plate
+					Tesseract.recognize(canvas, {
+							// Set the region of interest (ROI) to the bottom third of the canvas
+							// where the number plate is likely to appear
+							rectangle: {
+								top: canvas.height * 2 / 3,
+								left: 0,
+								width: canvas.width,
+								height: canvas.height / 3
+							}
+						})
+						.progress(function(message) {
+							console.log(message);
+						})
+						.then(function(result) {
+							// Draw a box around the detected text
+							var context = canvas.getContext('2d');
+							var lines = result.lines;
+							if (lines.length > 0) {
+								var line = lines[0];
+								var bbox = line.bbox;
+								context.strokeStyle = 'red';
+								context.lineWidth = 2;
+								context.strokeRect(bbox.x0, bbox.y0, bbox.x1 - bbox.x0, bbox.y1 - bbox.y0);
+
+								// Save number plate in a CSV file
+								var csv = 'Number Plate\n' + line.text + '\n';
+								var blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+								saveAs(blob, 'number_plate.csv');
+
+								// Display output
+								$('#output').html(line.text);
+							}
+						});
+				}, 100);
+			})
+			.catch(function(error) {
+				console.log('Unable to access the camera: ' + error.message);
+			});
+	</script>
+</body>
+</html>
