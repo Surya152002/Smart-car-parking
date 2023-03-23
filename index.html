@@ -9,15 +9,26 @@
 	<h1>Number Plate Detection</h1>
 	<video id="video" width="640" height="480" autoplay></video>
 	<canvas id="canvas" width="640" height="480"></canvas>
+	<button id="startButton">Start Camera</button>
 	<div id="output"></div>
 	<script>
 		// Load Tesseract.js
 		Tesseract.load().then(function() {
 			console.log('Tesseract.js loaded');
 		});
-
+		var startButton = document.getElementById('startButton');
+		startButton.addEventListener('click', function() {
+		  navigator.mediaDevices.getUserMedia({ video: true })
+		    .then(function(stream) {
+		      // code for accessing the camera
+		    })
+		    .catch(function(error) {
+		      console.log('Unable to access the camera: ' + error.message);
+		    });
+		});
 		// Get access to the device's camera
-		navigator.mediaDevices.getUserMedia({ video: true })
+		if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+  			navigator.mediaDevices.getUserMedia({ video: true })
 			.then(function(stream) {
 				var video = document.getElementById('video');
 				video.srcObject = stream;
@@ -72,6 +83,9 @@
 			.catch(function(error) {
 				console.log('Unable to access the camera: ' + error.message);
 			});
+			} else {
+  console.log('getUserMedia is not supported in this browser.');
+}
 	</script>
 </body>
 </html>
